@@ -5,6 +5,10 @@ import net.mamoe.mirai.console.data.value
 
 object Configuration : AutoSavePluginConfig("config") {
 
+    val queueFrequency: Long by value(1L)
+
+    val supports: MutableSet<String> by value(hashSetOf("jpg", "png", "gif"))
+
     val aliases: MutableMap<String, MutableSet<String>> by value(
         hashMapOf(
             "莫图" to mutableSetOf("莫老"),

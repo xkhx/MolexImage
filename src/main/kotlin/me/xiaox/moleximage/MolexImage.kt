@@ -3,6 +3,7 @@ package me.xiaox.moleximage
 import me.xiaox.moleximage.command.ImageCommand
 import me.xiaox.moleximage.config.Configuration
 import me.xiaox.moleximage.event.Listener
+import me.xiaox.moleximage.util.DownloadQueue
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.unregister
 import net.mamoe.mirai.console.permission.PermissionService
@@ -28,6 +29,7 @@ object MolexImage : KotlinPlugin(
         Configuration.reload()
         ImageCommand.register()
         Listener.init()
+        DownloadQueue
     }
 
     override fun onDisable() {
