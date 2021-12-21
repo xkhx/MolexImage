@@ -16,6 +16,7 @@ repositories {
 
 dependencies {
     implementation 'net.mamoe:mirai-core:2.8.2'
+    implementation("com.google.guava:guava:31.0.1-jre")
 }
 
 allprojects {

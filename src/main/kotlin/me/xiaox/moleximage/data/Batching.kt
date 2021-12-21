@@ -16,6 +16,8 @@ object Batching {
 
     operator fun contains(id: Long): Boolean = id in batch
 
+    operator fun contains(user: User): Boolean = user.id in batch
+
     fun start(id: Long, gallery: String) {
         if (id in this) {
             return

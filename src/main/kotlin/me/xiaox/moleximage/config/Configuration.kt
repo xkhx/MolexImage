@@ -26,5 +26,4 @@ object Configuration : AutoSavePluginConfig("config") {
         hashSetOf("来张", "来个", "来点")
     )
 
-
 }

@@ -29,7 +29,8 @@ object History {
                     listOf(
                         "$PREFIX ${target}最近一次请求的图片:",
                         "- 来自图库: $gallery",
-                        "- 图片文件: ${image.name} (${toFileSize(image.length())})"
+                        "- 图片文件: ${image.name} (${toFileSize(image.length())})",
+                        ""
                     ).concat()
                 ) + who.uploadImage(image)
             )

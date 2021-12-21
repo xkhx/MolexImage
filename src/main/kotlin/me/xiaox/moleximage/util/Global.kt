@@ -6,6 +6,7 @@ import me.xiaox.moleximage.data.Gallery
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.permission.PermissionService.Companion.hasPermission
 import net.mamoe.mirai.utils.MiraiLogger
+import net.mamoe.mirai.utils.info
 import java.io.File
 import java.text.DecimalFormat
 
@@ -23,7 +24,7 @@ suspend fun CommandSender.notAdmin(): Boolean = (!hasPermission(MolexImage.PERMI
 }
 
 fun fuzzyMatch(text: String, match: Collection<String>): Pair<String, Int>? = match
-    .mapNotNull { if (text.startsWith(it)) text to it.length else null }
+    .mapNotNull { if (text.startsWith(it)) it to it.length else null }
     .maxByOrNull { it.second }
 
 fun adaptKeyword(raw: String): String? {

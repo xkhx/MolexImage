@@ -10,6 +10,7 @@ import me.xiaox.moleximage.data.History
 import me.xiaox.moleximage.util.*
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CompositeCommand
+import net.mamoe.mirai.console.command.UserCommandSender
 import net.mamoe.mirai.contact.User
 import net.mamoe.mirai.message.data.Image
 import java.io.File
@@ -27,7 +28,7 @@ object ImageCommand : CompositeCommand(
     @SubCommand
     @Description("查看指定图库的信息")
     suspend fun CommandSender.view(raw: String) {
-        with(Gallery.getBy(raw, this) ?: return) {
+        withGallery(raw) {
             sendMessage(
                 listOf(
                     "$PREFIX 图库 $identity 的信息: ",
@@ -64,36 +65,33 @@ object ImageCommand : CompositeCommand(
         }
     }
 
+    // FIXME vararg 好像不能用
     @SubCommand
     @Description("向指定图库添加图片")
-    suspend fun CommandSender.add(raw: String, vararg images: Image) {
+    suspend fun UserCommandSender.add(raw: String, vararg images: Image) {
         if (notAdmin()) {
             return
         }
-        with(Gallery.getBy(raw, this) ?: return) {
+        withGallery(raw) {
             images.forEach { image ->
-                with(File(folder, image.imageId)) {
-                    if (exists()) {
-                        sendMessage("$PREFIX 该图片 ID 已被占用: $name")
-                        return@forEach
-                    }
+                if (File(folder, image.imageId).exists()) {
+                    sendMessage("$PREFIX 该图片 ID 已被占用: $name")
+                    return@forEach
                 }
-                DownloadQueue.request(identity, image) {
-                    sendMessage(toAddSuccess(identity, it))
-                }
+                DownloadQueue.request(identity, image) { sendMessage(toAddSuccess(identity, it)) }
             }
-            sendMessage("$PREFIX 成功处理 ${images.size} 个图片的批量添加请求")
+            sendMessage("$PREFIX 成功提交共 $size 个图片添加请求")
         }
     }
 
     @SubCommand
     @Description("向指定图库批量添加图片")
-    suspend fun CommandSender.batchAdd(raw: String) {
+    suspend fun UserCommandSender.batchAdd(raw: String) {
         if (notAdmin()) {
             return
         }
-        with(Gallery.getBy(raw, this) ?: return) {
-            Batching.start(user?.id ?: return, identity)
+        withGallery(raw) {
+            Batching.start(user.id, identity)
             sendMessage("$PREFIX 已进入对图库 $identity 的批量添加模式, 请私聊发送图片, 私聊任意非图片消息后结束批量添加")
         }
     }
@@ -104,10 +102,10 @@ object ImageCommand : CompositeCommand(
         if (notAdmin()) {
             return
         }
-        with(Gallery.getBy(raw, this) ?: return) {
+        withGallery(raw) {
             val file = images.firstOrNull {
                 it.nameWithoutExtension == name || it.name == name
-            } ?: return run { sendMessage("$PREFIX 未找到指定图片: $name") }
+            } ?: return@withGallery run { sendMessage("$PREFIX 未找到指定图片: $name") }
             file.delete()
             sendMessage("$PREFIX 成功从图库 $identity 中删除图片 ${file.name}")
         }
@@ -119,12 +117,11 @@ object ImageCommand : CompositeCommand(
         if (notAdmin()) {
             return
         }
-        // TODO 所有的 with 都可以提取
-        with(Gallery.getBy(raw, this) ?: return) {
+        withGallery(raw) {
             adaptKeyword(alias)?.let { exist ->
                 val message = if (exist == alias) "图库 $exist 已存在" else "$alias 已被作为图库 $exist 的昵称占用"
                 sendMessage("$PREFIX $message")
-                return
+                return@withGallery
             }
             addAlias(alias)
             sendMessage("$PREFIX 成功为图库 $identity 新增昵称 $alias")
@@ -142,7 +139,7 @@ object ImageCommand : CompositeCommand(
             sendMessage("$PREFIX 无法删除图库关键词 $alias")
             return
         }
-        with(Gallery.getBy(alias, this) ?: return) {
+        withGallery(alias) {
             delAlias(alias)
             sendMessage("$PREFIX 成功删除图库 $identity 的昵称 $alias")
         }
