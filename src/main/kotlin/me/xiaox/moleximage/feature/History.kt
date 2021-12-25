@@ -1,8 +1,8 @@
-package me.xiaox.moleximage.data
+package me.xiaox.moleximage.feature
 
+import me.xiaox.moleximage.config.Locale
 import me.xiaox.moleximage.util.PREFIX
 import me.xiaox.moleximage.util.concat
-import me.xiaox.moleximage.util.toFileSize
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.contact.Contact.Companion.uploadImage
 import net.mamoe.mirai.contact.User
@@ -17,7 +17,7 @@ object History {
     operator fun get(id: Long): Pair<String, File>? = history[id]
 
     fun record(user: User, gallery: String, file: File) {
-        this.history[user.id] = gallery to file
+        history[user.id] = gallery to file
     }
 
     suspend fun report(to: CommandSender, who: User) {
@@ -29,7 +29,7 @@ object History {
                     listOf(
                         "$PREFIX ${target}最近一次请求的图片:",
                         "- 来自图库: $gallery",
-                        "- 图片文件: ${image.name} (${toFileSize(image.length())})",
+                        "- 图片文件: ${image.name} (${Locale.toFilesize(image)})",
                         ""
                     ).concat()
                 ) + who.uploadImage(image)

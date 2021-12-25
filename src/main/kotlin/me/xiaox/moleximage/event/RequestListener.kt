@@ -1,8 +1,8 @@
 package me.xiaox.moleximage.event
 
 import me.xiaox.moleximage.config.Configuration
-import me.xiaox.moleximage.data.Gallery
-import me.xiaox.moleximage.data.History
+import me.xiaox.moleximage.feature.Gallery
+import me.xiaox.moleximage.feature.History
 import me.xiaox.moleximage.util.PREFIX
 import me.xiaox.moleximage.util.adaptKeyword
 import net.mamoe.mirai.contact.Contact.Companion.sendImage
@@ -45,6 +45,20 @@ object RequestListener : ListenerHost {
                     History.record(sender, gallery.identity, this)
                 }
             }
+        }
+    }
+
+    @EventHandler
+    suspend fun MessageEvent.onContinue() {
+        if (message.content != "再来一张") {
+            return
+        }
+        val history = History[sender.id] ?: return
+        val gallery = Gallery[history.first] ?: return
+
+        with(gallery.images.randomOrNull() ?: return) {
+            subject.sendImage(this)
+            History.record(sender, gallery.identity, this)
         }
     }
 

@@ -1,19 +1,17 @@
 package me.xiaox.moleximage.command
 
 import me.xiaox.moleximage.MolexImage
-import me.xiaox.moleximage.command.ImageCommand.delete
 import me.xiaox.moleximage.config.Configuration
-import me.xiaox.moleximage.data.Batching
-import me.xiaox.moleximage.data.Gallery
+import me.xiaox.moleximage.config.Locale
+import me.xiaox.moleximage.feature.Batching
+import me.xiaox.moleximage.feature.Gallery
 import me.xiaox.moleximage.data.GalleryExact
-import me.xiaox.moleximage.data.History
+import me.xiaox.moleximage.feature.History
 import me.xiaox.moleximage.util.*
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CompositeCommand
 import net.mamoe.mirai.console.command.UserCommandSender
 import net.mamoe.mirai.contact.User
-import net.mamoe.mirai.message.data.Image
-import java.io.File
 
 // TODO 命令需要优化
 object ImageCommand : CompositeCommand(
@@ -32,7 +30,7 @@ object ImageCommand : CompositeCommand(
             sendMessage(
                 listOf(
                     "$PREFIX 图库 $identity 的信息: ",
-                    "- 图库大小: $amount 张图片 (${toFileSize(size)})",
+                    "- 图库大小: $amount 张图片 (${Locale.toFilesize(size)})",
                     "- 图库昵称: ${aliases.ifEmpty { "无昵称" }}",
                     "- 图库前缀: ${Configuration.prefixes.filterValues { identity in it }.keys.ifEmpty { "无特殊前缀" }}"
                 ).concat()
@@ -47,7 +45,7 @@ object ImageCommand : CompositeCommand(
     @SubCommand
     @Description("创建一个图库")
     suspend fun CommandSender.create(gallery: String) {
-        if (notAdmin()) {
+        if (!permitted()) {
             return
         }
 
@@ -65,29 +63,10 @@ object ImageCommand : CompositeCommand(
         }
     }
 
-    // FIXME vararg 好像不能用
-    @SubCommand
-    @Description("向指定图库添加图片")
-    suspend fun UserCommandSender.add(raw: String, vararg images: Image) {
-        if (notAdmin()) {
-            return
-        }
-        withGallery(raw) {
-            images.forEach { image ->
-                if (File(folder, image.imageId).exists()) {
-                    sendMessage("$PREFIX 该图片 ID 已被占用: $name")
-                    return@forEach
-                }
-                DownloadQueue.request(identity, image) { sendMessage(toAddSuccess(identity, it)) }
-            }
-            sendMessage("$PREFIX 成功提交共 $size 个图片添加请求")
-        }
-    }
-
     @SubCommand
     @Description("向指定图库批量添加图片")
     suspend fun UserCommandSender.batchAdd(raw: String) {
-        if (notAdmin()) {
+        if (!permitted()) {
             return
         }
         withGallery(raw) {
@@ -99,7 +78,7 @@ object ImageCommand : CompositeCommand(
     @SubCommand
     @Description("从指定图库中删除指定图片")
     suspend fun CommandSender.delete(raw: String, name: String) {
-        if (notAdmin()) {
+        if (!permitted()) {
             return
         }
         withGallery(raw) {
@@ -114,7 +93,7 @@ object ImageCommand : CompositeCommand(
     @SubCommand
     @Description("为指定图库新增昵称")
     suspend fun CommandSender.addAlias(raw: String, alias: String) {
-        if (notAdmin()) {
+        if (!permitted()) {
             return
         }
         withGallery(raw) {
@@ -131,7 +110,7 @@ object ImageCommand : CompositeCommand(
     @SubCommand
     @Description("删除指定的图库昵称")
     suspend fun CommandSender.delAlias(alias: String) {
-        if (notAdmin()) {
+        if (!permitted()) {
             return
         }
 
@@ -142,6 +121,22 @@ object ImageCommand : CompositeCommand(
         withGallery(alias) {
             delAlias(alias)
             sendMessage("$PREFIX 成功删除图库 $identity 的昵称 $alias")
+        }
+    }
+
+    @SubCommand
+    @Description("删除指定的图库中的无效图片文件")
+    suspend fun CommandSender.deleteInvalid(raw: String) {
+        if (!permitted()) {
+            return
+        }
+        withGallery(raw) {
+            val invalid = folder.walk()
+                .maxDepth(1)
+                .filter { it.isFile && it.extension.lowercase() !in Configuration.supports }
+                .toSet()
+            invalid.forEach { it.delete() }
+            sendMessage("$PREFIX 共删除 ${invalid.size} 个文件")
         }
     }
 

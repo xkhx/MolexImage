@@ -1,12 +1,12 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.5.10'
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.5.10'
+    id 'org.jetbrains.kotlin.jvm' version '1.5.30'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.5.30'
 
-    id 'net.mamoe.mirai-console' version '2.8.2'
+    id 'net.mamoe.mirai-console' version '2.8.3'
 }
 
 group 'me.xiaox'
-version '1.2.0'
+version '1.2.5'
 
 repositories {
     maven { url 'https://maven.aliyun.com/nexus/content/groups/public/' }
@@ -15,8 +15,9 @@ repositories {
 }
 
 dependencies {
-    implementation 'net.mamoe:mirai-core:2.8.2'
+    implementation 'net.mamoe:mirai-core:2.8.3'
     implementation("com.google.guava:guava:31.0.1-jre")
+    implementation('org.apache.tika:tika-core:2.2.1')
 }
 
 allprojects {

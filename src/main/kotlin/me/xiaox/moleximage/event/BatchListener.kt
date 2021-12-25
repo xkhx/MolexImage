@@ -1,6 +1,6 @@
 package me.xiaox.moleximage.event
 
-import me.xiaox.moleximage.data.Batching
+import me.xiaox.moleximage.feature.Batching
 import me.xiaox.moleximage.util.PREFIX
 import net.mamoe.mirai.event.EventHandler
 import net.mamoe.mirai.event.ListenerHost
@@ -19,8 +19,8 @@ object BatchListener : ListenerHost {
             if (isEmpty()) {
                 return Batching.end(sender)
             }
-            forEach { Batching.batch(sender, it) }
-            sender.sendMessage("$PREFIX 成功提交共 $size 个图片添加请求")
+            Batching.batch(sender, this)
+            sender.sendMessage("$PREFIX 成功提交共 $size 个图片的添加请求")
         }
     }
 

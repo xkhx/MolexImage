@@ -1,14 +1,25 @@
 package me.xiaox.moleximage.util
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import me.xiaox.moleximage.MolexImage
-import me.xiaox.moleximage.config.Configuration
-import me.xiaox.moleximage.data.Gallery
 import net.mamoe.mirai.console.command.CommandSender
+import net.mamoe.mirai.console.command.CommandSender.Companion.asCommandSender
 import net.mamoe.mirai.console.permission.PermissionService.Companion.hasPermission
+import net.mamoe.mirai.contact.User
 import net.mamoe.mirai.utils.MiraiLogger
 import net.mamoe.mirai.utils.info
+import org.apache.tika.metadata.HttpHeaders
+import org.apache.tika.metadata.Metadata
+import org.apache.tika.mime.MediaType
+import org.apache.tika.parser.AutoDetectParser
+import org.apache.tika.parser.ParseContext
+import org.apache.tika.parser.Parser
+import org.xml.sax.helpers.DefaultHandler
 import java.io.File
-import java.text.DecimalFormat
+import java.io.InputStream
+import java.net.URL
+import java.util.zip.GZIPInputStream
 
 const val PREFIX = "MolexImage >"
 
@@ -17,33 +28,47 @@ val LOGGER: MiraiLogger
 
 fun Collection<String>.concat(): String = joinToString("\n")
 
-suspend fun CommandSender.notAdmin(): Boolean = (!hasPermission(MolexImage.PERMISSION_ADMIN)).also {
-    if (it) {
-        sendMessage("$PREFIX 你没有这个命令的权限")
+suspend fun CommandSender.permitted(silence: Boolean = false): Boolean =
+    hasPermission(MolexImage.PERMISSION_ADMIN).also {
+        if (silence) {
+            return@also
+        }
+        if (!it) {
+            sendMessage("$PREFIX 你没有这个命令的权限")
+        }
     }
-}
 
-fun fuzzyMatch(text: String, match: Collection<String>): Pair<String, Int>? = match
-    .mapNotNull { if (text.startsWith(it)) it to it.length else null }
-    .maxByOrNull { it.second }
+suspend fun User.permitted(silence: Boolean = false): Boolean = asCommandSender(false).permitted(silence)
 
-fun adaptKeyword(raw: String): String? {
-    fuzzyMatch(raw, Gallery.getKeywords())?.let { return it.first }
-    return Configuration.aliases.mapNotNull { (gallery, aliases) ->
-        fuzzyMatch(raw, aliases)?.let { gallery to it.second }
-    }.maxByOrNull { it.second }?.first
-}
+suspend fun URL.downloadTo(to: File): File {
+    var corrected: File = to
+    withContext(Dispatchers.IO) { openConnection() }.apply {
+        addRequestProperty(
+            "user-agent",
+            "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
+        )
 
-fun toFileSize(byte: Number): String {
-    val size = byte.toInt()
-    if (size < 10485) {
-        return "${DecimalFormat("0.##").format(size / 1024.0)} KB"
+        with(withContext(Dispatchers.IO) { getInputStream() }) {
+            if (contentEncoding == "gzip") GZIPInputStream(this) else this
+        }.apply {
+            with(getMimeType().substringAfter("image/", "")) {
+                if (isEmpty() || to.extension == this) {
+                    return@with
+                }
+                corrected = File(to.parentFile, "${to.nameWithoutExtension}.$this")
+            }
+            readBytes().let { corrected.writeBytes(it) }
+        }
     }
-    return "${DecimalFormat("0.##").format(size / 1024.0 / 1024.0)} MB"
+    return corrected
 }
 
-fun toAddSuccess(gallery: String, file: File): String = listOf(
-    "$PREFIX 成功添加到图库 $gallery",
-    "- 图片 ID: ${file.name}",
-    "- 图片大小: ${toFileSize(file.length())}"
-).concat()
+fun InputStream.getMimeType(): String {
+    val parser = AutoDetectParser()
+    parser.parsers = HashMap<MediaType, Parser>()
+    val metadata = Metadata()
+    runCatching {
+        parser.parse(this, DefaultHandler(), metadata, ParseContext())
+    }.onFailure { it.printStackTrace() }
+    return metadata.get(HttpHeaders.CONTENT_TYPE)
+}

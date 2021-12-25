@@ -1,6 +1,7 @@
 package me.xiaox.moleximage.data
 
 import me.xiaox.moleximage.config.Configuration
+import me.xiaox.moleximage.feature.Gallery
 import me.xiaox.moleximage.util.adaptKeyword
 import java.io.File
 
@@ -38,6 +39,8 @@ data class GalleryExact(val identity: String, val force: Boolean = false) {
         get() = Configuration.prefixes[identity] ?: emptySet()
     val aliases: Set<String>
         get() = Configuration.aliases[identity] ?: emptySet()
+
+    operator fun get(path: String): File = File(folder, path)
 
     fun addAlias(alias: String) {
         if (adaptKeyword(alias) != null) {

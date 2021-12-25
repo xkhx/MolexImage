@@ -1,6 +1,7 @@
-package me.xiaox.moleximage.data
+package me.xiaox.moleximage.feature
 
 import me.xiaox.moleximage.MolexImage
+import me.xiaox.moleximage.data.GalleryExact
 import me.xiaox.moleximage.util.adaptKeyword
 import java.io.File
 

@@ -5,9 +5,11 @@ import net.mamoe.mirai.console.data.value
 
 object Configuration : AutoSavePluginConfig("config") {
 
-    val queueFrequency: Long by value(1L)
+    val addFrequency: Long by value(1L)
 
-    val supports: MutableSet<String> by value(hashSetOf("jpg", "png", "gif"))
+    val downloadFrequency: Long by value(1L)
+
+    val supports: MutableSet<String> by value(hashSetOf("jpg", "png", "gif", "jpeg"))
 
     val aliases: MutableMap<String, MutableSet<String>> by value(
         hashMapOf(

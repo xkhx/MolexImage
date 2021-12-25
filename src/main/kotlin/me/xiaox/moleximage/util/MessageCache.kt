@@ -6,35 +6,40 @@ import net.mamoe.mirai.event.EventHandler
 import net.mamoe.mirai.event.ListenerHost
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.event.events.MessagePostSendEvent
+import net.mamoe.mirai.message.MessageReceipt
 import net.mamoe.mirai.message.data.MessageChain
 import net.mamoe.mirai.message.data.ids
 import net.mamoe.mirai.message.sourceIds
-import net.mamoe.mirai.utils.info
 import java.util.concurrent.TimeUnit
 
 @Suppress("MemberVisibilityCanBePrivate")
 object MessageCache : ListenerHost {
 
-    private val cache = CacheBuilder.newBuilder()
-        .expireAfterWrite(2, TimeUnit.MINUTES)
-        .maximumSize(100)
+    private val messageCache = CacheBuilder.newBuilder()
+        .expireAfterWrite(30, TimeUnit.MINUTES)
+        .maximumSize(200)
         .build<Int, MessageChain>()
+    private val receiptCache = CacheBuilder.newBuilder()
+        .expireAfterWrite(30, TimeUnit.MINUTES)
+        .maximumSize(100)
+        .build<Int, MessageReceipt<Contact>>()
 
-    operator fun get(id: Int): MessageChain? = cache.getIfPresent(id)
+
+    operator fun get(id: Int): MessageChain? = messageCache.getIfPresent(id)
+
+    fun getReceipt(id: Int): MessageReceipt<Contact>? = receiptCache.getIfPresent(id)
 
     @EventHandler
     fun MessageEvent.onReceive() {
-        message.ids.elementAtOrNull(0)?.let {
-            cache.put(it, message)
-        }
+        messageCache.put(message.ids.elementAtOrNull(0) ?: return, message)
     }
 
     @EventHandler
     fun MessagePostSendEvent<out Contact>.onSend() {
-        receipt?.let { receipt ->
-            receipt.sourceIds.elementAtOrNull(0)?.let {
-                cache.put(it, message)
-            }
+        with(receipt ?: return) {
+            val id = sourceIds.elementAtOrNull(0) ?: return
+            messageCache.put(id, message)
+            receiptCache.put(id, this)
         }
     }
 
