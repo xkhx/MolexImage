@@ -109,7 +109,7 @@ object AddManager : QueueManager<Collection<AddReceipt>, AddRequest>() {
                     add("- 完成于 ${runCatching { dateFormat.format(completed!!) }.getOrElse { "[无法获取完成时间]" }}")
                     add(runCatching { "- 耗时 ${completed!! - handled!!}ms" }.getOrElse { "[无法获取耗时]" })
                     add("图库变化:")
-                    snapshotAfter.forEach { (identity, after) ->
+                    snapshotAfter.toSortedMap().forEach { (identity, after) ->
                         val before = snapshotBefore[identity]
                         val delta = after - (before ?: 0)
                         add("- $identity: ${before ?: "-"} -> $after (${"%+d".format(delta)})")

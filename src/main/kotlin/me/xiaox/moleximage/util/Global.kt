@@ -30,12 +30,10 @@ fun Collection<String>.concat(): String = joinToString("\n")
 
 suspend fun CommandSender.permitted(silence: Boolean = false): Boolean =
     hasPermission(MolexImage.PERMISSION_ADMIN).also {
-        if (silence) {
+        if (silence || it) {
             return@also
         }
-        if (!it) {
-            sendMessage("$PREFIX 你没有这个命令的权限")
-        }
+        sendMessage("$PREFIX 你没有这个命令的权限")
     }
 
 suspend fun User.permitted(silence: Boolean = false): Boolean = asCommandSender(false).permitted(silence)
@@ -51,8 +49,9 @@ suspend fun URL.downloadTo(to: File): File {
         with(withContext(Dispatchers.IO) { getInputStream() }) {
             if (contentEncoding == "gzip") GZIPInputStream(this) else this
         }.apply {
+            val extension = to.extension.lowercase()
             with(getMimeType().substringAfter("image/", "")) {
-                if (isEmpty() || to.extension == this) {
+                if (isEmpty() || extension == this || (extension == "jpg" && this == "jpeg")) {
                     return@with
                 }
                 corrected = File(to.parentFile, "${to.nameWithoutExtension}.$this")
@@ -64,11 +63,12 @@ suspend fun URL.downloadTo(to: File): File {
 }
 
 fun InputStream.getMimeType(): String {
-    val parser = AutoDetectParser()
-    parser.parsers = HashMap<MediaType, Parser>()
-    val metadata = Metadata()
-    runCatching {
-        parser.parse(this, DefaultHandler(), metadata, ParseContext())
-    }.onFailure { it.printStackTrace() }
-    return metadata.get(HttpHeaders.CONTENT_TYPE)
+    return Metadata().also {
+        with(AutoDetectParser()) {
+            parsers = HashMap<MediaType, Parser>()
+            runCatching {
+                parse(this@getMimeType, DefaultHandler(), it, ParseContext())
+            }.onFailure { it.printStackTrace() }
+        }
+    }.get(HttpHeaders.CONTENT_TYPE)
 }
