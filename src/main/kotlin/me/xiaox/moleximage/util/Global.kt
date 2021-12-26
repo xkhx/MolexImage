@@ -3,6 +3,7 @@ package me.xiaox.moleximage.util
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.xiaox.moleximage.MolexImage
+import me.xiaox.moleximage.config.Configuration
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CommandSender.Companion.asCommandSender
 import net.mamoe.mirai.console.permission.PermissionService.Companion.hasPermission
@@ -49,14 +50,18 @@ suspend fun URL.downloadTo(to: File): File {
         with(withContext(Dispatchers.IO) { getInputStream() }) {
             if (contentEncoding == "gzip") GZIPInputStream(this) else this
         }.apply {
+            val bytes = readBytes()
             val extension = to.extension.lowercase()
-            with(getMimeType().substringAfter("image/", "")) {
-                if (isEmpty() || extension == this || (extension == "jpg" && this == "jpeg")) {
-                    return@with
-                }
-                corrected = File(to.parentFile, "${to.nameWithoutExtension}.$this")
+//            with(getMimeType().substringAfter("image/", "")) {
+//                if (isEmpty() || extension == this || (extension == "jpg" && this == "jpeg")) {
+//                    return@with
+//                }
+//                corrected = File(to.parentFile, "${to.nameWithoutExtension}.$this")
+//            }
+            if (extension !in Configuration.supports) {
+                error("不受支持的文件类型: .$extension")
             }
-            readBytes().let { corrected.writeBytes(it) }
+            corrected.writeBytes(bytes)
         }
     }
     return corrected

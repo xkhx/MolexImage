@@ -41,7 +41,12 @@ object RequestListener : ListenerHost {
                     return
                 }
                 with(random()) {
-                    sendImage(this)
+                    runCatching {
+                        sendImage(this)
+                    }.onFailure {
+                        it.printStackTrace()
+                        sendMessage("$PREFIX 发送图片($name)时遇到错误: ${it.message}")
+                    }
                     History.record(sender, gallery.identity, this)
                 }
             }
@@ -57,7 +62,12 @@ object RequestListener : ListenerHost {
         val gallery = Gallery[history.first] ?: return
 
         with(gallery.images.randomOrNull() ?: return) {
-            subject.sendImage(this)
+            runCatching {
+                subject.sendImage(this)
+            }.onFailure {
+                it.printStackTrace()
+                subject.sendMessage("$PREFIX 发送图片($name)时遇到错误: ${it.message}")
+            }
             History.record(sender, gallery.identity, this)
         }
     }
