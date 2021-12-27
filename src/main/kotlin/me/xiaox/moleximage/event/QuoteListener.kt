@@ -47,7 +47,7 @@ object QuoteListener : ListenerHost {
             }
             '#' in content -> {
                 filterTags(content).let { (galleries, notFound) ->
-                    if (galleries.isEmpty()) {
+                    if (galleries.isEmpty() || !sender.permitted()) {
                         return
                     }
                     with(original() ?: return) {
