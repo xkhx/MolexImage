@@ -40,22 +40,31 @@ object AddManager : QueueManager<Collection<AddReceipt>, AddRequest>() {
 
                 downloaded[url]?.let { exist ->
                     result.compute(finalFilename) { _, receipt ->
-                        (receipt ?: AddReceipt(finalFilename, Result.success(exist.copyTo(target, overwrite = true))))
-                            .also { it.galleries[identity] = gallery.amount + 1 }
+                        (receipt ?: AddReceipt(
+                            finalFilename,
+                            Result.success(exist.copyTo(target, overwrite = true)),
+                            "从图库 ${exist.parentFile.name} 中复制"
+                        )).also { it.galleries[identity] = gallery.amount + 1 }
                     }
                     return@downloader
                 }
 
+
                 runCatching { URL(url).downloadTo(target) }
                     .onFailure { it.printStackTrace() }
-                    .onSuccess {
-                        downloaded[url] = it
-                        sources[url] = it.name
-                        finalFilename = it.name
+                    .onSuccess { (file, _) ->
+                        downloaded[url] = file
+                        sources[url] = file.name
+                        finalFilename = file.name
                     }
-                    .also {
+                    .also { raw ->
+                        var comment = ""
+                        val fileResult = raw.map { (file, rawComment) ->
+                            comment = rawComment
+                            file
+                        }
                         result.compute(finalFilename) { _, receipt ->
-                            (receipt ?: AddReceipt(finalFilename, it))
+                            (receipt ?: AddReceipt(finalFilename, fileResult, comment))
                                 .also { it.galleries[identity] = gallery.amount }
                         }
                     }
@@ -133,17 +142,17 @@ object AddManager : QueueManager<Collection<AddReceipt>, AddRequest>() {
     }
 
     @Suppress("MemberVisibilityCanBePrivate")
-    class AddReceipt(val filename: String, val result: Result<File>) {
+    class AddReceipt(val filename: String, val result: Result<File>, val comment: String = "") {
         val galleries = HashMap<String, Int>()
 
         fun format(): String {
             return with(result) {
                 if (isFailure) {
-                    "[下载失败] $filename (${result.exceptionOrNull()})"
+                    "[下载失败] $filename (${result.exceptionOrNull()}) $comment"
                 } else {
                     val size = getOrNull()?.let { Locale.toFilesize(it) } ?: "无法获取文件对象"
                     val indexes = galleries.toSortedMap().values.joinToString("|") { "#$it" }
-                    "[$indexes] $filename ($size)"
+                    "[$indexes] $filename ($size) $comment"
                 }
             }
         }
