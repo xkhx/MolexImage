@@ -1,5 +1,6 @@
 package me.xiaox.moleximage.queue.impl
 
+import kotlinx.coroutines.delay
 import me.xiaox.moleximage.config.Configuration
 import me.xiaox.moleximage.config.Locale
 import me.xiaox.moleximage.feature.Gallery
@@ -67,6 +68,7 @@ object AddManager : QueueManager<Collection<AddReceipt>, AddRequest>() {
                                 .also { it.galleries[identity] = gallery.amount }
                         }
                     }
+                delay(Duration.seconds(Configuration.downloadFrequency))
             }
         }
         completed = System.currentTimeMillis()
