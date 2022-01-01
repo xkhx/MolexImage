@@ -49,7 +49,6 @@ object AddManager : QueueManager<Collection<AddReceipt>, AddRequest>() {
                     return@downloader
                 }
 
-
                 runCatching { URL(url).downloadTo(target) }
                     .onFailure { it.printStackTrace() }
                     .onSuccess { (file, _) ->

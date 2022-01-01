@@ -133,7 +133,10 @@ object ImageCommand : CompositeCommand(
         withGallery(raw) {
             val invalid = folder.walk()
                 .maxDepth(1)
-                .filter { it.isFile && it.extension.lowercase() !in Configuration.supports }
+                .filter { it.isFile }
+                .filter {
+                    it.extension.lowercase() !in Configuration.supports || it.length() == 0L
+                }
                 .toSet()
             invalid.forEach { it.delete() }
             sendMessage("$PREFIX 共删除 ${invalid.size} 个文件")

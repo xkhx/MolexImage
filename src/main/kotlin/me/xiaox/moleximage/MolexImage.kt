@@ -19,7 +19,7 @@ import net.mamoe.mirai.event.globalEventChannel
 object MolexImage : KotlinPlugin(
     JvmPluginDescription(
         "me.xiaox.molex-image",
-        "1.3.0",
+        "1.3.1",
         "MolexImage"
     )
 ) {
