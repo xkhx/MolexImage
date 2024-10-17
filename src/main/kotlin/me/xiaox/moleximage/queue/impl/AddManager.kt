@@ -16,17 +16,21 @@ import net.mamoe.mirai.message.data.Image
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
 import java.io.File
 import java.net.URL
+import java.nio.file.Path
 import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
+import kotlin.collections.HashMap
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 object AddManager : QueueManager<Collection<AddReceipt>, AddRequest>() {
 
     override val frequency: Duration
-        get() = Duration.seconds(Configuration.addFrequency)
+        get() = Configuration.addFrequency.seconds
 
     override suspend fun AddRequest.handle(): Collection<AddReceipt> {
         handled = System.currentTimeMillis()
@@ -68,7 +72,7 @@ object AddManager : QueueManager<Collection<AddReceipt>, AddRequest>() {
                                 .also { it.galleries[identity] = gallery.amount }
                         }
                     }
-                delay(Duration.seconds(Configuration.downloadFrequency))
+                delay(Configuration.downloadFrequency.seconds)
             }
         }
         completed = System.currentTimeMillis()
@@ -85,7 +89,11 @@ object AddManager : QueueManager<Collection<AddReceipt>, AddRequest>() {
             ConcurrentHashMap<String, String>().apply {
                 putAll(images
                     .associateBy { it.queryUrl() }
-                    .mapValues { (_, image) -> image.imageId })
+                    .mapValues { (_, image) ->
+                        val uniqueId = UUID.randomUUID().toString()
+                        val extension = File(image.imageId).extension
+                        return@mapValues "${uniqueId}.${extension}"
+                    })
             },
             onComplete
         ).also { AddManager += it }

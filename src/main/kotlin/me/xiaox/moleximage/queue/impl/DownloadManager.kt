@@ -10,13 +10,13 @@ import java.io.File
 import java.net.URL
 import java.util.zip.GZIPInputStream
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 object DownloadManager : QueueManager<File, DownloadRequest>() {
 
     override val frequency: Duration
-        get() = Duration.seconds(Configuration.downloadFrequency)
+        get() = Configuration.downloadFrequency.seconds
 
     override suspend fun DownloadRequest.handle(): File {
         withContext(Dispatchers.IO) { URL(url).openConnection() }.apply {
